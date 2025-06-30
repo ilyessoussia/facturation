@@ -39,7 +39,6 @@ function InvoiceHistory() {
       id: invoice.id,
       invoiceNumber: invoice.invoice_number,
       date: invoice.date.split('T')[0],
-      dueDate: invoice.due_date ? invoice.due_date.split('T')[0] : '',
       clientName: invoice.client_name,
       clientAddress: invoice.client_address,
       clientEmail: invoice.client_email,
@@ -113,7 +112,6 @@ function InvoiceHistory() {
     const { error } = await supabase.from('invoices').update({
       invoice_number: editInvoice.invoiceNumber,
       date: editInvoice.date,
-      due_date: editInvoice.documentType === 'facture' ? editInvoice.dueDate : null,
       client_name: editInvoice.clientName,
       client_address: editInvoice.clientAddress,
       client_email: editInvoice.clientEmail,
@@ -304,9 +302,6 @@ function InvoiceHistory() {
                   {errors.invoiceNumber && <span className="error-message">{errors.invoiceNumber}</span>}
                 </p>
                 <p><strong>DATE :</strong> <input type="date" name="date" value={editInvoice.date} onChange={handleInputChange} /></p>
-                {editInvoice.documentType === 'facture' && (
-                  <p><strong>ÉCHÉANCE :</strong> <input type="date" name="dueDate" value={editInvoice.dueDate} onChange={handleInputChange} /></p>
-                )}
               </div>
               <div className="right">
                 <p>
@@ -320,15 +315,17 @@ function InvoiceHistory() {
                   {errors.clientName && <span className="error-message">{errors.clientName}</span>}
                 </p>
                 <p>
-                  <strong>Adresse :</strong>
-                  <textarea
-                    name="clientAddress"
-                    value={editInvoice.clientAddress}
-                    onChange={handleInputChange}
-                  ></textarea>
+                  <p>
+                    <strong>Adresse :</strong>
+                    <textarea
+                      name="clientAddress"
+                      value={editInvoice.clientAddress}
+                      onChange={handleInputChange}
+                    ></textarea>
+                  </p>
+                  <p><strong>Mail :</strong> <input type="email" name="clientEmail" value={editInvoice.clientEmail} onChange={handleInputChange} /></p>
+                  <p><strong>MF :</strong> <input type="text" name="clientMF" value={editInvoice.clientMF} onChange={handleInputChange} /></p>
                 </p>
-                <p><strong>Mail :</strong> <input type="email" name="clientEmail" value={editInvoice.clientEmail} onChange={handleInputChange} /></p>
-                <p><strong>MF :</strong> <input type="text" name="clientMF" value={editInvoice.clientMF} onChange={handleInputChange} /></p>
               </div>
             </div>
 
@@ -449,9 +446,6 @@ function InvoiceHistory() {
               <div className="left">
                 <p><strong>{selectedInvoice.document_type.toUpperCase()} N° :</strong> {selectedInvoice.invoice_number}</p>
                 <p><strong>DATE :</strong> {formatDate(selectedInvoice.date)}</p>
-                {selectedInvoice.document_type === 'facture' && selectedInvoice.due_date && (
-                  <p><strong>ÉCHÉANCE :</strong> {formatDate(selectedInvoice.due_date)}</p>
-                )}
               </div>
               <div className="right">
                 <p><strong>Client :</strong> {selectedInvoice.client_name}</p>

@@ -9,7 +9,6 @@ function InvoiceForm() {
   const [formData, setFormData] = useState({
     invoiceNumber: '0022025',
     date: today,
-    dueDate: '2025-05-22',
     clientName: '',
     clientAddress: '',
     clientEmail: '',
@@ -78,7 +77,6 @@ function InvoiceForm() {
     const { error } = await supabase.from('invoices').insert({
       invoice_number: formData.invoiceNumber,
       date: formData.date,
-      due_date: formData.documentType === 'facture' ? formData.dueDate : null,
       client_name: formData.clientName,
       client_address: formData.clientAddress,
       client_email: formData.clientEmail,
@@ -99,7 +97,6 @@ function InvoiceForm() {
       setFormData({
         invoiceNumber: '',
         date: today,
-        dueDate: '',
         clientName: '',
         clientAddress: '',
         clientEmail: '',
@@ -176,9 +173,6 @@ function InvoiceForm() {
               {errors.invoiceNumber && <span className="error-message">{errors.invoiceNumber}</span>}
             </p>
             <p><strong>DATE :</strong> <input type="date" name="date" value={formData.date} onChange={handleInputChange} /></p>
-            {formData.documentType === 'facture' && (
-              <p><strong>ÉCHÉANCE :</strong> <input type="date" name="dueDate" value={formData.dueDate} onChange={handleInputChange} /></p>
-            )}
           </div>
           <div className="right">
             <p>
