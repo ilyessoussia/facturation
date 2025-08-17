@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from './supabaseClient';
 import writtenNumber from 'written-number';
 import jsPDF from 'jspdf';
 import logoAcrecert from './assets/logoAcrecert.png';
@@ -18,13 +17,13 @@ function InvoiceHistory() {
     fetchInvoices();
   }, []);
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = () => {
     setIsLoading(true);
-    const { data, error } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
-    if (error) {
-      console.error('Error fetching invoices:', error);
-    } else {
+    try {
+      const data = JSON.parse(localStorage.getItem('invoices') || '[]');
       setInvoices(data);
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
     }
     setIsLoading(false);
   };
@@ -46,7 +45,7 @@ function InvoiceHistory() {
       items: invoice.items.map(item => ({
         description: item.description,
         unitPrice: item.unitPrice,
-        manDays: item.quantity,
+        manDays: item.quantity || item.manDays,
         total: item.total
       })),
       timbre: invoice.timbre,
@@ -105,33 +104,40 @@ function InvoiceHistory() {
     return (parseFloat(calculateTotalHT()) + parseFloat(calculateTVA()) + parseFloat(editInvoice.timbre || 0)).toFixed(2);
   };
 
-  const saveEdits = async () => {
+  const saveEdits = () => {
     if (!validateForm()) return;
     if (!window.confirm(`Confirmer la modification de ce ${editInvoice.documentType} ?`)) return;
     setIsLoading(true);
-    const { error } = await supabase.from('invoices').update({
-      invoice_number: editInvoice.invoiceNumber,
-      date: editInvoice.date,
-      client_name: editInvoice.clientName,
-      client_address: editInvoice.clientAddress,
-      client_email: editInvoice.clientEmail,
-      client_mf: editInvoice.clientMF,
-      items: editInvoice.items,
-      timbre: parseFloat(editInvoice.timbre),
-      tax_rate: parseFloat(editInvoice.taxRate || 19),
-      total_ht: parseFloat(calculateTotalHT()),
-      tva: parseFloat(calculateTVA()),
-      total_ttc: parseFloat(calculateTotalTTC()),
-      document_type: editInvoice.documentType,
-    }).eq('id', editInvoice.id);
-    setIsLoading(false);
-    if (error) {
-      alert('Erreur lors de la modification : ' + error.message);
-    } else {
+    try {
+      const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+      const updatedInvoices = invoices.map(invoice =>
+        invoice.id === editInvoice.id
+          ? {
+              ...invoice,
+              invoice_number: editInvoice.invoiceNumber,
+              date: editInvoice.date,
+              client_name: editInvoice.clientName,
+              client_address: editInvoice.clientAddress,
+              client_email: editInvoice.clientEmail,
+              client_mf: editInvoice.clientMF,
+              items: editInvoice.items,
+              timbre: parseFloat(editInvoice.timbre),
+              tax_rate: parseFloat(editInvoice.taxRate || 19),
+              total_ht: parseFloat(calculateTotalHT()),
+              tva: parseFloat(calculateTVA()),
+              total_ttc: parseFloat(calculateTotalTTC()),
+              document_type: editInvoice.documentType,
+            }
+          : invoice
+      );
+      localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
       alert(`${editInvoice.documentType.charAt(0).toUpperCase() + editInvoice.documentType.slice(1)} modifié avec succès !`);
       setEditInvoice(null);
       fetchInvoices();
+    } catch (error) {
+      alert('Erreur lors de la modification : ' + error.message);
     }
+    setIsLoading(false);
   };
 
   const saveAsPDF = () => {
@@ -315,17 +321,15 @@ function InvoiceHistory() {
                   {errors.clientName && <span className="error-message">{errors.clientName}</span>}
                 </p>
                 <p>
-                  <p>
-                    <strong>Adresse :</strong>
-                    <textarea
-                      name="clientAddress"
-                      value={editInvoice.clientAddress}
-                      onChange={handleInputChange}
-                    ></textarea>
-                  </p>
-                  <p><strong>Mail :</strong> <input type="email" name="clientEmail" value={editInvoice.clientEmail} onChange={handleInputChange} /></p>
-                  <p><strong>MF :</strong> <input type="text" name="clientMF" value={editInvoice.clientMF} onChange={handleInputChange} /></p>
+                  <strong>Adresse :</strong>
+                  <textarea
+                    name="clientAddress"
+                    value={editInvoice.clientAddress}
+                    onChange={handleInputChange}
+                  ></textarea>
                 </p>
+                <p><strong>Mail :</strong> <input type="email" name="clientEmail" value={editInvoice.clientEmail} onChange={handleInputChange} /></p>
+                <p><strong>MF :</strong> <input type="text" name="clientMF" value={editInvoice.clientMF} onChange={handleInputChange} /></p>
               </div>
             </div>
 

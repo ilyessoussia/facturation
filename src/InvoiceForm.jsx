@@ -1,7 +1,11 @@
 import { useState } from 'react';
-import { supabase } from './supabaseClient';
 import writtenNumber from 'written-number';
-import logoAcrecert from './assets/logoAcrecert.png'
+import logoAcrecert from './assets/logoAcrecert.png';
+
+// Utility function to generate a unique ID
+const generateId = () => {
+  return 'id_' + Math.random().toString(36).substr(2, 9) + Date.now();
+};
 
 function InvoiceForm() {
   const today = new Date().toISOString().split('T')[0];
@@ -70,29 +74,38 @@ function InvoiceForm() {
     return (parseFloat(calculateTotalHT()) + parseFloat(calculateTVA()) + parseFloat(formData.timbre || 0)).toFixed(2);
   };
 
-  const saveToSupabase = async () => {
+  const saveToLocalStorage = async () => {
     if (!validateForm()) return;
     if (!window.confirm(`Confirmer l'enregistrement de ce ${formData.documentType} ?`)) return;
     setIsLoading(true);
-    const { error } = await supabase.from('invoices').insert({
-      invoice_number: formData.invoiceNumber,
-      date: formData.date,
-      client_name: formData.clientName,
-      client_address: formData.clientAddress,
-      client_email: formData.clientEmail,
-      client_mf: formData.clientMF,
-      items: formData.items,
-      timbre: parseFloat(formData.timbre),
-      tax_rate: parseFloat(formData.taxRate || 19),
-      total_ht: parseFloat(calculateTotalHT()),
-      tva: parseFloat(calculateTVA()),
-      total_ttc: parseFloat(calculateTotalTTC()),
-      document_type: formData.documentType,
-    });
-    setIsLoading(false);
-    if (error) {
-      alert('Erreur lors de l\'enregistrement : ' + error.message);
-    } else {
+
+    try {
+      // Get existing invoices from localStorage or initialize an empty array
+      const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+      
+      // Create new invoice object
+      const newInvoice = {
+        id: generateId(),
+        invoice_number: formData.invoiceNumber,
+        date: formData.date,
+        client_name: formData.clientName,
+        client_address: formData.clientAddress,
+        client_email: formData.clientEmail,
+        client_mf: formData.clientMF,
+        items: formData.items,
+        timbre: parseFloat(formData.timbre),
+        tax_rate: parseFloat(formData.taxRate || 19),
+        total_ht: parseFloat(calculateTotalHT()),
+        tva: parseFloat(calculateTVA()),
+        total_ttc: parseFloat(calculateTotalTTC()),
+        document_type: formData.documentType,
+        created_at: new Date().toISOString(),
+      };
+
+      // Add new invoice to the array and save to localStorage
+      invoices.push(newInvoice);
+      localStorage.setItem('invoices', JSON.stringify(invoices));
+
       alert(`${formData.documentType.charAt(0).toUpperCase() + formData.documentType.slice(1)} enregistré avec succès !`);
       setFormData({
         invoiceNumber: '',
@@ -106,7 +119,10 @@ function InvoiceForm() {
         taxRate: 19,
         documentType: 'facture',
       });
+    } catch (error) {
+      alert('Erreur lors de l\'enregistrement : ' + error.message);
     }
+    setIsLoading(false);
   };
 
   const formatDate = (dateString) => {
@@ -139,7 +155,7 @@ function InvoiceForm() {
           <option value="devis">Devis</option>
         </select>
         <button
-          onClick={saveToSupabase}
+          onClick={saveToLocalStorage}
           disabled={isLoading}
           className="tooltip"
           data-tooltip="Enregistrer dans l'historique"
