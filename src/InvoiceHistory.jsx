@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import writtenNumber from 'written-number';
 import jsPDF from 'jspdf';
 import logoAcrecert from './assets/logoAcrecert.png';
+import { api } from './api.js';
 
 function InvoiceHistory() {
   const [invoices, setInvoices] = useState([]);
@@ -17,13 +18,14 @@ function InvoiceHistory() {
     fetchInvoices();
   }, []);
 
-  const fetchInvoices = () => {
+  const fetchInvoices = async () => {
     setIsLoading(true);
     try {
-      const data = JSON.parse(localStorage.getItem('invoices') || '[]');
+      const data = await api.getInvoices();
       setInvoices(data);
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      alert('Erreur lors du chargement des documents : ' + error.message);
     }
     setIsLoading(false);
   };
@@ -104,33 +106,28 @@ function InvoiceHistory() {
     return (parseFloat(calculateTotalHT()) + parseFloat(calculateTVA()) + parseFloat(editInvoice.timbre || 0)).toFixed(2);
   };
 
-  const saveEdits = () => {
+  const saveEdits = async () => {
     if (!validateForm()) return;
     if (!window.confirm(`Confirmer la modification de ce ${editInvoice.documentType} ?`)) return;
     setIsLoading(true);
     try {
-      const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-      const updatedInvoices = invoices.map(invoice =>
-        invoice.id === editInvoice.id
-          ? {
-              ...invoice,
-              invoice_number: editInvoice.invoiceNumber,
-              date: editInvoice.date,
-              client_name: editInvoice.clientName,
-              client_address: editInvoice.clientAddress,
-              client_email: editInvoice.clientEmail,
-              client_mf: editInvoice.clientMF,
-              items: editInvoice.items,
-              timbre: parseFloat(editInvoice.timbre),
-              tax_rate: parseFloat(editInvoice.taxRate || 19),
-              total_ht: parseFloat(calculateTotalHT()),
-              tva: parseFloat(calculateTVA()),
-              total_ttc: parseFloat(calculateTotalTTC()),
-              document_type: editInvoice.documentType,
-            }
-          : invoice
-      );
-      localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
+      const updatedInvoice = {
+        invoice_number: editInvoice.invoiceNumber,
+        date: editInvoice.date,
+        client_name: editInvoice.clientName,
+        client_address: editInvoice.clientAddress,
+        client_email: editInvoice.clientEmail,
+        client_mf: editInvoice.clientMF,
+        items: editInvoice.items,
+        timbre: parseFloat(editInvoice.timbre),
+        tax_rate: parseFloat(editInvoice.taxRate || 19),
+        total_ht: parseFloat(calculateTotalHT()),
+        tva: parseFloat(calculateTVA()),
+        total_ttc: parseFloat(calculateTotalTTC()),
+        document_type: editInvoice.documentType,
+      };
+      
+      await api.updateInvoice(editInvoice.id, updatedInvoice);
       alert(`${editInvoice.documentType.charAt(0).toUpperCase() + editInvoice.documentType.slice(1)} modifié avec succès !`);
       setEditInvoice(null);
       fetchInvoices();

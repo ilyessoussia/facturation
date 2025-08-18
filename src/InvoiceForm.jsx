@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import writtenNumber from 'written-number';
 import logoAcrecert from './assets/logoAcrecert.png';
+import { api } from './api.js';
 
 // Utility function to generate a unique ID
 const generateId = () => {
@@ -74,15 +75,12 @@ function InvoiceForm() {
     return (parseFloat(calculateTotalHT()) + parseFloat(calculateTVA()) + parseFloat(formData.timbre || 0)).toFixed(2);
   };
 
-  const saveToLocalStorage = async () => {
+  const saveToMongoDB = async () => {
     if (!validateForm()) return;
     if (!window.confirm(`Confirmer l'enregistrement de ce ${formData.documentType} ?`)) return;
     setIsLoading(true);
 
     try {
-      // Get existing invoices from localStorage or initialize an empty array
-      const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-      
       // Create new invoice object
       const newInvoice = {
         id: generateId(),
@@ -102,9 +100,8 @@ function InvoiceForm() {
         created_at: new Date().toISOString(),
       };
 
-      // Add new invoice to the array and save to localStorage
-      invoices.push(newInvoice);
-      localStorage.setItem('invoices', JSON.stringify(invoices));
+      // Save to MongoDB via API
+      await api.createInvoice(newInvoice);
 
       alert(`${formData.documentType.charAt(0).toUpperCase() + formData.documentType.slice(1)} enregistré avec succès !`);
       setFormData({
@@ -155,10 +152,10 @@ function InvoiceForm() {
           <option value="devis">Devis</option>
         </select>
         <button
-          onClick={saveToLocalStorage}
+          onClick={saveToMongoDB}
           disabled={isLoading}
           className="tooltip"
-          data-tooltip="Enregistrer dans l'historique"
+          data-tooltip="Enregistrer dans la base de données"
         >
           Enregistrer
           {isLoading && <span className="loading-spinner"></span>}

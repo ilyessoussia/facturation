@@ -7,11 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "netlify:dev": "netlify dev"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
     "jspdf": "^3.0.1",
+    "mongodb": "^6.18.0",
     "number-to-words": "^1.2.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -28,6 +30,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "netlify-cli": "^17.38.1",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.6",
     "vite": "^6.3.5"
